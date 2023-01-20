@@ -1,12 +1,4 @@
-""" Example 4: Searching for the Optimal RandomForest Hyperparmaters """
-
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-warnings.simplefilter(action='ignore', category=UserWarning)
-
-#############################################################
-# This revised example shows a more realistic range of hyperparameters.
-#############################################################
+""" Example 1: Random Forests """
 
 # Pandas is used for data manipulation
 import pandas as pd
@@ -79,43 +71,3 @@ print('Accuracy:', round(accuracy, 2), '%.')
 # Print out the mean square error.
 mse = mean_squared_error(test_labels, predictions)
 print('RMSE:', np.sqrt(mse))
-
-# Get numerical feature importances
-importances = list(rf.feature_importances_)
-
-# Present features and importance scores.
-def showFeatureImportances(importances, feature_list):
-    dfImportance = pd.DataFrame()
-    for i in range(0, len(importances)):
-        dfImportance = dfImportance.append({"importance":importances[i],
-                                            "feature":feature_list[i] },
-                                            ignore_index = True)
-
-    dfImportance = dfImportance.sort_values(by=['importance'],
-                                            ascending=False)
-    print(dfImportance)
-showFeatureImportances(importances, feature_list)
-
-from sklearn.model_selection import RandomizedSearchCV
-
-random_grid =\
-{'bootstrap': [True],
- 'max_depth': [4,6, None],
- 'max_features': ['auto'],
- 'min_samples_leaf': [15],
- 'min_samples_split': [15],
- 'n_estimators': [ 400, 800, 1600]}
-
-print(random_grid)
-
-# Use the random grid to search for best hyperparameters
-# First create the base model to tune
-rf = RandomForestRegressor()
-# Random search of parameters, using 3 fold cross validation,
-# search across 100 different combinations, and use all available cores
-rf_random = RandomizedSearchCV(estimator = rf, param_distributions = random_grid, n_iter = 100, cv = 3, verbose=2, n_jobs = -1)
-# Fit the random search model
-rf_random.fit(train_features, train_labels)
-
-print("Best parrameters")
-print(rf_random.best_params_)
