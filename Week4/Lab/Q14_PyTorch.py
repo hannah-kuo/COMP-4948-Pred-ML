@@ -1,42 +1,44 @@
-""" Example 5: College Admissions Using PyTorch """
+""" Using the data from Exercise 13, modify Example 5 to use PyTorch with this data set"""
 
-import torch
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
-
-### DATA           #######################################
-# Setup data.
+from sklearn.metrics import classification_report
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+import torch
+import torch.nn as nn
 
-candidates = {'gmat': [780, 750, 690, 710, 680, 730, 690, 720,
-                       740, 690, 610, 690, 710, 680, 770, 610, 580, 650, 540, 590, 620,
-                       600, 550, 550, 570, 670, 660, 580, 650, 660, 640, 620, 660, 660,
-                       680, 650, 670, 580, 590, 690],
-              'gpa': [4, 3.9, 3.3, 3.7, 3.9, 3.7, 2.3, 3.3,
-                      3.3, 1.7, 2.7, 3.7, 3.7, 3.3, 3.3, 3, 2.7, 3.7, 2.7, 2.3,
-                      3.3, 2, 2.3, 2.7, 3, 3.3, 3.7, 2.3, 3.7, 3.3, 3, 2.7, 4,
-                      3.3, 3.3, 2.3, 2.7, 3.3, 1.7, 3.7],
-              'work_experience': [3, 4, 3, 5, 4, 6, 1, 4, 5,
-                                  1, 3, 5, 6, 4, 3, 1, 4, 6, 2, 3, 2, 1, 4, 1, 2, 6, 4, 2, 6, 5, 1, 2, 4, 6,
-                                  5, 1, 2, 1, 4, 5],
-              'admitted': [1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1,
-                           1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0,
-                           0, 0, 1]}
+# ------------------------ DATA --------------------------------------
+# Setup data.
 
-df = pd.DataFrame(candidates, columns=['gmat', 'gpa',
-                                       'work_experience', 'admitted'])
-y = np.array(df['admitted'])
+# Load the flower feature data into a DataFrame.
+df = pd.DataFrame(columns=['Length', 'Width', 'IsRed'])
+
+data = [
+    {'Length': 3, 'Width': 1.5, 'IsRed': 1},
+    {'Length': 2, 'Width': 1, 'IsRed': 0},
+    {'Length': 4, 'Width': 1.5, 'IsRed': 1},
+    {'Length': 3, 'Width': 1, 'IsRed': 0},
+    {'Length': 3.5, 'Width': .5, 'IsRed': 1},
+    {'Length': 2, 'Width': .5, 'IsRed': 0},
+    {'Length': 5.5, 'Width': 1, 'IsRed': 1},
+    {'Length': 1, 'Width': 1, 'IsRed': 0},
+    {'Length': 4.5, 'Width': 1, 'IsRed': 1}]
+
+df = pd.DataFrame.from_records(data)
+
+y = np.array(df['IsRed'])
 X = df.copy()
-del X['admitted']
-X = X
-##########################################################
+del X['IsRed']
+
+# --------------------------------------------------------------
+
+
 # Split the data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # define standard scaler
-from sklearn.preprocessing import StandardScaler
-
 scaler = StandardScaler()
 
 # transform data
@@ -52,15 +54,12 @@ X_test = torch.tensor(X_test_scaled, dtype=torch.float32)
 y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(1)
 y_test = torch.tensor(y_test, dtype=torch.float32).unsqueeze(1)
 
-import torch
-import torch.nn as nn
-
 
 # Define the neural network architecture
 class BinaryClassificationNet(nn.Module):
     def __init__(self):
         super(BinaryClassificationNet, self).__init__()
-        self.fc1 = nn.Linear(3, 8)
+        self.fc1 = nn.Linear(2, 8)
         self.fc2 = nn.Linear(8, 1)
         self.sigmoid = nn.Sigmoid()
 
@@ -97,4 +96,25 @@ with torch.no_grad():
     outputs = model(X_test)
     predictions = outputs.round()
     accuracy = (predictions == y_test).float().mean()
-    print(f'Accuracy: {accuracy}')
+    print(f'\nAccuracy: {accuracy}')
+
+    # Make predictions.
+    print("Actual:")
+    print(y_test)
+    print("Predicted: ")
+    print(predictions)
+    predictions_list = []
+
+
+    def showClassificationReport(y_test, yhats):
+        # Convert continous predictions to
+        # 0 or 1.
+        for i in range(0, len(yhats)):
+            if yhats[i] > 0.5:
+                predictions_list.append(1)
+            else:
+                predictions_list.append(0)
+        print(classification_report(y_test, predictions_list, zero_division=False))
+
+
+    showClassificationReport(y_test, predictions)
