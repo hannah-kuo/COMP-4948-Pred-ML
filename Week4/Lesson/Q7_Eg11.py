@@ -1,4 +1,8 @@
-""" Example 11: Grid Searching the Learning Rate """
+"""
+Starting with the code from Example 11, set the optimal learning rate and modify the code to enable
+grid searching for the optimal number of neurons
+- examine the optimal number of neurons for the initial hidden layer.
+"""
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
