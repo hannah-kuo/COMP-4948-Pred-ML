@@ -61,7 +61,7 @@ print("\nLogistic Regression:")
 clf = LogisticRegression(max_iter=1000)
 clf.fit(X_trainScaled, y_train)
 predictions = clf.predict(X_testScaled)
-# evaluate_model(model, X_test, y_test)
+evaluate_model(predictions, y_test)
 
 COLUMN_DIMENSION = 1
 # --------------------------------------------------------------
@@ -87,21 +87,21 @@ def getPredictions(model, X_test):
 
 # -------------------Model parameters---------------------------
 
-neuronList = [5, 25, 50, 100, 150]
+# neuronList = [5, 25, 50, 100, 150]
+neuronList = [5, 10, 25, 50, 75, 100, 125, 150]
 
 # --------------------------------------------------------------
 
 # ------------ Build model -------------------------------------
 # Build model
 import keras
+from keras.optimizers import Adam  # for adam optimizer
 from keras.optimizers import RMSprop
 
 
 def create_model(numNeurons):
     model = Sequential()
-    model.add(Dense(numNeurons,
-                    input_dim=3, kernel_initializer='uniform',
-                    activation='relu'))
+    model.add(Dense(numNeurons, input_dim=3, kernel_initializer='uniform', activation='relu'))
     model.add(Dense(1, kernel_initializer='uniform'))
 
     # Use Adam optimizer with the given learning rate
@@ -109,8 +109,7 @@ def create_model(numNeurons):
     # optimizer = Adam(lr=LEARNING_RATE)
     optimizer = RMSprop(learning_rate=LEARNING_RATE)
     # model.compile(loss='mean_squared_error', optimizer=optimizer)
-    model.compile(loss='binary_crossentropy', optimizer=optimizer,
-                  metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     return model
 
 
@@ -119,8 +118,6 @@ EPOCHS = 200
 NUM_BATCHES = 60
 
 for numNeurons in neuronList:
-    # BATCH_SIZE = 10
-    # EPOCHS = 100
     model = create_model(numNeurons)
     history = model.fit(X_trainScaled, y_train, epochs=EPOCHS,
                         batch_size=NUM_BATCHES, verbose=1,
@@ -130,11 +127,11 @@ for numNeurons in neuronList:
     # Unfortunate need to format data.
     y_test.to_list()
     predictions = list(predictions)
-    # precision, recall, f1 = evaluate_model(model, X_test, y_test)
     precision, recall, f1 = evaluate_model(predictions, y_test)
     networkStats.append({"precision": precision, "recall": recall,
                          "f1": f1, "# neurons": numNeurons})
 
 print(networkStats)
+print()
 showResults(networkStats)
 # --------------------------------------------------------------
