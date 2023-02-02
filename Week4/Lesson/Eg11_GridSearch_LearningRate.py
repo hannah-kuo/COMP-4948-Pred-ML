@@ -87,7 +87,7 @@ learningRates = [0.0001, 0.001, 0.005, 0.01]
 
 # --------------------------------------------------------------
 # Model building section.
-from keras.optimizers import RMSprop  # for adam optimizer
+from keras.optimizers import RMSprop
 
 
 def create_model(learningRate):
