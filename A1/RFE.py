@@ -1,35 +1,29 @@
 import pandas as pd
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
 from sklearn.impute import KNNImputer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import RFECV
 
-# Load the dataset into a pandas DataFrame object
+# read the cleaned dataset
 df = pd.read_csv('cleaned_dataset.csv')
 
-# Split the dataset into a target variable and predictor variables
-y = df['Sepsis_Positive']
-X = df.drop(['Sepsis_Positive'], axis=1)
-
-# Create a KNN imputer object with n_neighbors=5
+# impute missing values
 imputer = KNNImputer(n_neighbors=5)
+df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
 
-# Impute the missing values in the predictor variables
-X_imputed = imputer.fit_transform(X)
+# define the target variable and predictors
+target = 'Sepsis_Positive'
+predictors = [col for col in df_imputed.columns if col not in [target, 'ID']]
 
-# Convert the imputed predictor variables back into a pandas DataFrame object
-X_imputed_df = pd.DataFrame(X_imputed, columns=X.columns)
+# create the logistic regression model
+lr_model = LogisticRegression(fit_intercept=True, solver='liblinear')
 
-# Create a random forest classifier object
-rfc = RandomForestClassifier(n_estimators=100, random_state=42)
+# create the RFE object with 10 features to select
+rfe = RFE(estimator=lr_model, n_features_to_select=5)
 
-# Create an RFE object with 5-fold cross-validation
-rfe = RFECV(estimator=rfc, step=1, cv=5, scoring='accuracy')
+# fit the RFE object on the imputed dataset
+rfe.fit(df_imputed[predictors], df_imputed[target])
 
-# Fit the RFE object to the imputed predictor variables and target variable
-rfe.fit(X_imputed_df, y)
+# print the selected features
+selected_features = [predictors[i] for i in range(len(predictors)) if rfe.support_[i]]
+print('Selected features:', selected_features)
 
-# Print the selected features and their rankings
-selected_features = X_imputed_df.columns[rfe.support_]
-feature_rankings = rfe.ranking_
-print('Selected features:', list(selected_features))
-print('Feature rankings:', list(feature_rankings))
