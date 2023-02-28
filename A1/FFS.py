@@ -1,36 +1,47 @@
 import pandas as pd
+import numpy as np
 from sklearn.impute import KNNImputer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import SequentialFeatureSelector
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_selection import f_regression
+from sklearn.metrics import accuracy_score
 
-# Load the dataset into a pandas DataFrame object
+# read the cleaned dataset
 df = pd.read_csv('cleaned_dataset.csv')
 
-# Split the dataset into a target variable and predictor variables
-y = df['Sepsis_Positive']
-X = df.drop(['Sepsis_Positive'], axis=1)
-
-# Create a KNN imputer object with n_neighbors=5
+# impute missing values
 imputer = KNNImputer(n_neighbors=5)
+df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
 
-# Impute the missing values in the predictor variables
-X_imputed = imputer.fit_transform(X)
+# split data into features and target variable
+X = df_imputed.drop(['Sepsis_Positive'], axis=1)
+y = df_imputed['Sepsis_Positive']
 
-# Convert the imputed predictor variables back into a pandas DataFrame object
-X_imputed_df = pd.DataFrame(X_imputed, columns=X.columns)
+# initialize logistic regression model
+lr = LogisticRegression(max_iter=10000)
 
-# Create a random forest classifier object
-rfc = RandomForestClassifier(n_estimators=100, random_state=42)
+# forward feature selection with f_regression
+features = []
+scores = []
+for i in range(len(X.columns)):
+    best_score = 0
+    best_feature = ""
+    for col in X.columns:
+        if col not in features:
+            new_features = features + [col]
+            X_new = X[new_features]
+            # f_regression returns F statistic for each feature.
+            f_scores, _ = f_regression(X_new, y)
+            lr.fit(X_new, y)
+            y_pred = lr.predict(X_new)
+            score = accuracy_score(y, y_pred) * f_scores[i]
+            if score > best_score:
+                best_score = score
+                best_feature = col
+    features.append(best_feature)
+    scores.append(best_score)
+    print("Added feature:", best_feature, "Score:", best_score)
 
-# Create a sequential feature selector object with forward selection and 5-fold cross-validation
-sfs = SequentialFeatureSelector(rfc, n_features_to_select=5, direction='forward', cv=5)
-
-# Fit the sequential feature selector object to the imputed predictor variables and target variable
-sfs.fit(X_imputed_df, y)
-
-# Print the selected features and their cross-validation scores
-selected_features = X_imputed_df.columns[sfs.get_support()]
-cv_scores = cross_val_score(rfc, X_imputed_df[selected_features], y, cv=5)
-print('Selected features:', list(selected_features))
-print('Cross-validation scores:', list(cv_scores))
+# print selected features and their scores
+print("Selected Features:", features)
+print("Feature Scores:", scores)
