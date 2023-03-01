@@ -11,7 +11,10 @@ df = pd.read_csv('cleaned_dataset.csv')
 
 # Split the dataset into a target variable and predictor variables
 y = df['Sepsis_Positive']
-X = df.drop(['Sepsis_Positive'], axis=1)
+# X = df.drop(['Sepsis_Positive'], axis=1)
+# X = df[['PL', 'M11', 'BD2', 'PRG', 'Age']]
+# X = df[['PL', 'M11', 'BD2']]  # --> runner up
+X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]  # --> best performing combo
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30)
 

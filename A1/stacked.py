@@ -15,7 +15,12 @@ df = pd.read_csv('cleaned_dataset.csv')
 
 # Split the dataset into a target variable and predictor variables
 y = df['Sepsis_Positive']
-X = df.drop(['Sepsis_Positive'], axis=1)
+# X = df.drop(['Sepsis_Positive'], axis=1)
+# X = df[['PL', 'M11', 'BD2', 'PRG', 'Age']]
+
+# the next two perform pretty similarly
+X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]
+# X = df[['PL', 'M11', 'BD2']]
 
 
 def getUnfitModels():
