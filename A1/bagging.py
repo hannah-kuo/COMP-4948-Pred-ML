@@ -12,7 +12,10 @@ df = pd.read_csv('cleaned_dataset.csv')
 
 # Split the dataset into a target variable and predictor variables
 y = df['Sepsis_Positive']
-X = df.drop(['Sepsis_Positive'], axis=1)
+# X = df.drop(['Sepsis_Positive'], axis=1)
+# X = df[['PL', 'M11', 'BD2', 'PRG', 'Age']]
+X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]  # --> this yielded slightly better f-1 scores
+
 
 # Create classifiers
 knn = KNeighborsClassifier()
@@ -54,7 +57,6 @@ for clf in classifierArray:
 
     # max_features means the maximum number of features to draw from X.
     # max_samples sets the percentage of available data used for fitting.
-    bagging_clf = BaggingClassifier(clf, max_samples=0.4, max_features=6,
-                                    n_estimators=100)
+    bagging_clf = BaggingClassifier(clf, max_samples=0.4, max_features=6, n_estimators=100)
     baggedModel = bagging_clf.fit(X_train, y_train)
     evaluateModel(baggedModel, X_test, y_test, "BAGGED: " + modelType)
