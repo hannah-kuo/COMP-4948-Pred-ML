@@ -1,6 +1,7 @@
 import pandas as pd
-from sklearn.impute import KNNImputer
 from sklearn.ensemble import RandomForestClassifier
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Load the dataset into a pandas DataFrame object
 df = pd.read_csv('cleaned_dataset.csv')
@@ -8,22 +9,35 @@ df = pd.read_csv('cleaned_dataset.csv')
 # Split the dataset into a target variable and predictor variables
 y = df['Sepsis_Positive']
 X = df.drop(['Sepsis_Positive'], axis=1)
+feature_list = ['PRG', 'PL', 'PR', 'SK', 'TS', 'M11', 'BD2', 'Age', 'Insurance']
 
-# Create a KNN imputer object with n_neighbors=5
-imputer = KNNImputer(n_neighbors=5)
+# Create a random forest classifier
+rf = RandomForestClassifier(n_estimators=100)
 
-# Impute the missing values in the predictor variables
-X_imputed = imputer.fit_transform(X)
+# Fit the random forest classifier to the data
+rf.fit(X, y)
 
-# Create a random forest classifier object and fit it to the imputed predictor variables and target variable
-rfc = RandomForestClassifier(n_estimators=100, random_state=42)
-rfc.fit(X_imputed, y)
+# Extract the feature importances and sort them in descending order
+# importances = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
+#
+# # Print the feature importances
+# print(importances)
 
-# Get the feature importances and sort them in descending order
-importances = rfc.feature_importances_
-indices = importances.argsort()[::-1]
+# Get numerical feature importances
+importances = list(rf.feature_importances_)
 
-# Print the feature rankings
-print("Feature ranking:")
-for i in range(X_imputed.shape[1]):
-    print("%d. %s (%f)" % (i + 1, X.columns[indices[i]], importances[indices[i]]))
+
+# Present features and importance scores.
+def showFeatureImportances(importances, feature_list):
+    dfImportance = pd.DataFrame()
+    for i in range(0, len(importances)):
+        dfImportance = dfImportance.append({"importance": importances[i],
+                                            "feature": feature_list[i]},
+                                           ignore_index=True)
+
+    dfImportance = dfImportance.sort_values(by=['importance'],
+                                            ascending=False)
+    print(dfImportance)
+
+
+showFeatureImportances(importances, feature_list)
