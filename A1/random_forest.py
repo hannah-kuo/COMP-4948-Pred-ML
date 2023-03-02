@@ -1,6 +1,9 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn import metrics
+from sklearn.model_selection import train_test_split
 import warnings
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Load the dataset into a pandas DataFrame object
@@ -11,17 +14,20 @@ y = df['Sepsis_Positive']
 X = df.drop(['Sepsis_Positive'], axis=1)
 feature_list = ['PRG', 'PL', 'PR', 'SK', 'TS', 'M11', 'BD2', 'Age', 'Insurance']
 
+# Split dataset into training set and test set
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, train_size=0.7)
+
 # Create a random forest classifier
-rf = RandomForestClassifier(n_estimators=100)
+rf = RandomForestClassifier(n_estimators=1000)
 
 # Fit the random forest classifier to the data
-rf.fit(X, y)
+rf.fit(X_train, y_train)
 
-# Extract the feature importances and sort them in descending order
-# importances = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
-#
-# # Print the feature importances
-# print(importances)
+# Train the model using the training sets y_pred=rf.predict(X_test)
+y_pred = rf.predict(X_test)
+
+# Model Accuracy, how often is the classifier correct?
+print("Accuracy:", metrics.accuracy_score(y_test, y_pred))
 
 # Get numerical feature importances
 importances = list(rf.feature_importances_)
