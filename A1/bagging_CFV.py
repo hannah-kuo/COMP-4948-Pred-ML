@@ -26,7 +26,7 @@ lr = LogisticRegression(fit_intercept=True, solver='liblinear')
 classifierArray = [knn, svc, rg, lr]
 
 # Initialize K-Fold cross-validation
-k_fold = KFold(n_splits=5, shuffle=True)
+k_fold = KFold(n_splits=3, shuffle=True)
 
 
 def showStats(classifier, scores):
@@ -46,7 +46,7 @@ def evaluateModel(model, X_test, y_test, title):
     report = classification_report(y_test, predictions)
     print(report)
     # Calculate evaluation metrics
-    print("-- Average evaluation metrics over 5 cross fold validation folds --")
+    print("-- Average evaluation metrics over 3 cross fold validation folds --")
     acc_scores = cross_val_score(model, X, y, cv=k_fold, scoring='accuracy')
     precision_scores = cross_val_score(model, X, y, cv=k_fold, scoring='precision')
     recall_scores = cross_val_score(model, X, y, cv=k_fold, scoring='recall')
