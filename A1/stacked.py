@@ -28,7 +28,7 @@ def getUnfitModels():
     models.append(LogisticRegression())
     models.append(DecisionTreeClassifier())
     models.append(AdaBoostClassifier())
-    models.append(RandomForestClassifier(n_estimators=10))
+    models.append(RandomForestClassifier(n_estimators=100))
     return models
 
 

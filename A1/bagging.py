@@ -57,6 +57,7 @@ for clf in classifierArray:
 
     # max_features means the maximum number of features to draw from X.
     # max_samples sets the percentage of available data used for fitting.
-    bagging_clf = BaggingClassifier(clf, max_samples=0.4, max_features=6, n_estimators=100)
+    # did hyperparameter tuning for "max_features" and "n_estimators"
+    bagging_clf = BaggingClassifier(clf, max_samples=0.4, max_features=6, n_estimators=1000)
     baggedModel = bagging_clf.fit(X_train, y_train)
     evaluateModel(baggedModel, X_test, y_test, "BAGGED: " + modelType)
