@@ -21,12 +21,12 @@ rf = RandomForestRegressor()
 random_grid = \
     {'bootstrap': [True],
      'max_depth': [4, 6, None],
-     'max_features': ['auto'],
+     'max_features': [1.0],
      'min_samples_leaf': [15],
      'min_samples_split': [15],
      'n_estimators': [400, 800, 1600]}
 
-rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, n_jobs=-1)
+rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=9, cv=3, n_jobs=-1)
 # Fit the random search model
 rf_random.fit(X_train, y_train)
 print("Best parameters to use for random forest")
