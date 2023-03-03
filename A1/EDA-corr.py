@@ -9,10 +9,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 df = pd.read_csv('cleaned_dataset.csv')
 
 # Select variables to plot
-variables = ['Sepsis_Positive', 'PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']
+# variables = ['Sepsis_Positive', 'PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']
 
 # Create pair plot
-sns.pairplot(df[variables], corner=True)
+# sns.pairplot(df[variables], corner=True)
+sns.pairplot(df)
 
 # Show the plot
 plt.show()
