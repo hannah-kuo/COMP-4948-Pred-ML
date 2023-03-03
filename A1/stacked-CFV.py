@@ -3,8 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from warnings import simplefilter
 from sklearn.exceptions import ConvergenceWarning
 
@@ -15,12 +14,11 @@ df = pd.read_csv('cleaned_dataset.csv')
 
 # Split the dataset into a target variable and predictor variables
 y = df['Sepsis_Positive']
-# X = df.drop(['Sepsis_Positive'], axis=1)
-# X = df[['PL', 'M11', 'BD2', 'PRG', 'Age']]
-
-# the next two perform pretty similarly
 X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]
-# X = df[['PL', 'M11', 'BD2']]
+
+# Initialize K-Fold cross-validation
+k_fold = KFold(n_splits=3, shuffle=True)
+
 
 def getUnfitModels():
     models = list()
@@ -31,10 +29,23 @@ def getUnfitModels():
     return models
 
 
+def showStats(classifier, scores):
+    strMean = str(round(scores.mean(), 2))
+    print(f"Average {classifier}: {strMean}")
+
+
 def evaluateModel(y_test, predictions, model):
-    print("\n*** " + model.__class__.__name__)
-    report = classification_report(y_test, predictions)
-    print(report)
+    # Calculate evaluation metrics
+    print("\nAverage evaluation metrics over cross fold validation folds:")
+    acc_scores = cross_val_score(model, X, y, cv=k_fold, scoring='accuracy')
+    precision_scores = cross_val_score(model, X, y, cv=k_fold, scoring='precision')
+    recall_scores = cross_val_score(model, X, y, cv=k_fold, scoring='recall')
+    f1_scores = cross_val_score(model, X, y, cv=k_fold, scoring='f1')
+    # Print evaluation metrics
+    showStats("Accuracy", acc_scores)
+    showStats("Precision", precision_scores)
+    showStats("Recall", recall_scores)
+    showStats("F1 Score", f1_scores)
 
 
 def fitBaseModels(X_train, y_train, X_test, models):
@@ -70,13 +81,11 @@ print("\n---------- Evaluate Base Models ----------")
 for i in range(0, len(models)):
     scores = cross_val_score(models[i], X_test, y_test, cv=5)
     print("\n*** " + models[i].__class__.__name__)
-    print("Accuracy:", round(scores.mean(), 3))
     predictions = models[i].predict(X_test)
     evaluateModel(y_test, predictions, models[i])
 
 # Evaluate stacked model with validation data.
 print("\n---------- Evaluate Stacked Model ----------")
 scores = cross_val_score(stackedModel, dfPredictions, y_test, cv=5)
-print("Accuracy:", round(scores.mean(), 3))
 stackedPredictions = stackedModel.predict(dfPredictions)
 evaluateModel(y_test, stackedPredictions, stackedModel)

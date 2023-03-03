@@ -30,9 +30,7 @@ k_fold = KFold(n_splits=3, shuffle=True)
 
 
 def showStats(classifier, scores):
-    # print(classifier + ":    ", end="")
     strMean = str(round(scores.mean(), 2))
-    # print("Mean: " + strMean + "   ", end="")
     print(f"Average {classifier}: {strMean}")
 
 
