@@ -379,12 +379,12 @@ print(f"Best hyperparameters for XGBClassifier: {grid_search.best_params_}")
 """ Bagged Model with Cross Fold Validation, Hyperparameter Tuning, and Scaling"""
 
 print("\n\n ----- Bagged Model with Cross Fold Validation, Hyperparameter Tuning, and Scaling -----")
+
 # Create classifiers
 knn = KNeighborsClassifier()
 svc = SVC()
 rg = RidgeClassifier()
-# lr = LogisticRegression(fit_intercept=True, solver='liblinear')
-lr = LogisticRegression(max_iter=10000000, random_state=42)
+lr = LogisticRegression(max_iter=10000000)
 
 # Build array of classifiers.
 classifierArray = [knn, svc, rg, lr]
@@ -395,8 +395,8 @@ k_fold = KFold(n_splits=3, shuffle=True)
 
 def showStats(classifier, scores):
     print(classifier + ":    ", end="")
-    strMean = str(round(scores.mean(), 2))
-    strStd = str(round(scores.std(), 2))
+    strMean = str(round(scores.mean(), 4))
+    strStd = str(round(scores.std(), 4))
     print("Mean: " + strMean + "   ", end="")
     print("Std: " + strStd)
 
@@ -463,10 +463,9 @@ ada_boost = AdaBoostClassifier(learning_rate=0.1, n_estimators=200)
 grad_boost = GradientBoostingClassifier(learning_rate=0.01, max_depth=7, subsample=1.0)
 xgb_boost = XGBClassifier(learning_rate=0.01, max_depth=3, n_estimators=500)
 eclf = EnsembleVoteClassifier(clfs=[ada_boost, grad_boost, xgb_boost], voting='hard')
-lr = LogisticRegression(C=1, penalty='l2', max_iter=100000)
 
 # Build array of classifiers.
-classifiers = [ada_boost, grad_boost, xgb_boost, eclf, lr]
+classifiers = [ada_boost, grad_boost, xgb_boost, eclf]
 
 # Set up KFold cross-validation
 kf = KFold(n_splits=10, shuffle=True)
@@ -527,14 +526,10 @@ k_fold = KFold(n_splits=3, shuffle=True)
 
 def getUnfitModels():
     models = list()
-
-    # models.append(LogisticRegression(max_iter=10000000))
     models.append(LogisticRegression(C=1, penalty='l2'))
     models.append(DecisionTreeClassifier(max_depth=11, min_samples_leaf=2, min_samples_split=10))
     models.append(AdaBoostClassifier())
-    # tuned the hyperparameter n_estimators=800 from what was suggested in the best parameters to use for random forest
     models.append(RandomForestClassifier(max_depth=10, min_samples_leaf=1, min_samples_split=5, n_estimators=800))
-
     models.append(GradientBoostingClassifier(learning_rate=0.01, max_depth=7, subsample=1.0))
     models.append(XGBClassifier())
     return models
