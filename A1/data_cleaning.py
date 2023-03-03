@@ -1,10 +1,4 @@
 import pandas as pd
-import numpy as np
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
-from sklearn.linear_model import LogisticRegression
-from sklearn import metrics
-from sklearn.preprocessing import StandardScaler
 from sklearn.impute import KNNImputer
 
 # Show all columns.
@@ -18,6 +12,7 @@ df = pd.read_csv(PATH + CSV_DATA, sep=',')
 
 print("\n---------- Raw data ----------\n")
 print(df.head(10))  # View a snapshot of the data.
+print()
 print(df.describe().T)  # View stats including counts which highlight missing values.
 
 # Split the dataset into a target variable and predictor variables
@@ -44,4 +39,5 @@ df_imputed.to_csv('cleaned_dataset.csv', index=False)
 
 print("\n---------- Cleaned up data ----------\n")
 print(df_imputed.head(10))
+print()
 print(df_imputed.describe().T)
