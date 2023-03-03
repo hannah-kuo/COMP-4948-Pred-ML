@@ -23,7 +23,7 @@ eclf = EnsembleVoteClassifier(clfs=[ada_boost, grad_boost, xgb_boost], voting='h
 classifiers = [ada_boost, grad_boost, xgb_boost, eclf]
 
 # Set up KFold cross-validation
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
+kf = KFold(n_splits=5, shuffle=True)
 
 # Loop through the classifiers and perform cross-validation
 for clf in classifiers:
