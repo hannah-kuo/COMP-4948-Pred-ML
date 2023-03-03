@@ -13,7 +13,15 @@ df = pd.read_csv('cleaned_dataset.csv')
 
 # Split the dataset into a target variable and predictor variables
 y = df['Sepsis_Positive']
-X = df.drop(['Sepsis_Positive'], axis=1)
+
+# best models
+X = df[['PL', 'M11', 'BD2', 'PRG', 'Age']]  # better; Average F1: 0.7276420935857161
+# X = df[['PL', 'M11', 'BD2', 'PRG']]
+
+# X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]
+# X = df[['PL', 'M11', 'BD2']]
+# X = df[['PL', 'M11', 'BD2', 'Age']]
+# X = df[['PL', 'M11', 'BD2', 'Insurance']]
 
 # Create a KNN imputer object with n_neighbors=5
 imputer = KNNImputer(n_neighbors=5)
@@ -23,19 +31,6 @@ X_imputed = imputer.fit_transform(X)
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.3)
-
-# Create a logistic regression object and fit it to the training data
-# lr = LogisticRegression(random_state=42, max_iter=1000)
-# lr.fit(X_train, y_train)
-#
-# # Make predictions on the testing data and compute evaluation metrics
-# y_pred = lr.predict(X_test)
-# accuracy = accuracy_score(y_test, y_pred)
-# report = classification_report(y_test, y_pred)
-#
-# print("Accuracy score:", accuracy)
-# print("Classification report:")
-# print(report)
 
 """ ADD CROSS FOLD VALIDATION """
 
@@ -61,7 +56,8 @@ for train_index, test_index in kfold.split(df):
     y_test = y.iloc[test_index]
 
     # Perform logistic regression.
-    logisticModel = LogisticRegression(fit_intercept=True, solver='liblinear')  # Removed random state
+    # logisticModel = LogisticRegression(fit_intercept=True, solver='liblinear', random_state=42)  # Removed random state
+    logisticModel = LogisticRegression(max_iter=10000000, random_state=42)
     # Fit the model.
     logisticModel.fit(X_train, y_train.values.ravel())
 

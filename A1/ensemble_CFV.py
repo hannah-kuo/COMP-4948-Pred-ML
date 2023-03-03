@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score
@@ -11,19 +12,34 @@ df = pd.read_csv('cleaned_dataset.csv')
 
 # Split the dataset into a target variable and predictor variables
 y = df['Sepsis_Positive']
-X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]  # --> best performing combo
+# X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]  # --> best performing combo
+
+X = df[['PL', 'M11', 'BD2', 'PRG', 'Age']]
+# X = df[['PL', 'M11', 'BD2', 'PRG']]
+
+# X = df[['PL', 'M11', 'BD2', 'PRG', 'Age', 'Insurance']]
+# X = df[['PL', 'M11', 'BD2']]
+# X = df[['PL', 'M11', 'BD2', 'Insurance']]
 
 # Create classifiers
-ada_boost = AdaBoostClassifier()
-grad_boost = GradientBoostingClassifier()
-xgb_boost = XGBClassifier()
+# ada_boost = AdaBoostClassifier()
+# grad_boost = GradientBoostingClassifier()
+# xgb_boost = XGBClassifier()
+# eclf = EnsembleVoteClassifier(clfs=[ada_boost, grad_boost, xgb_boost], voting='hard')
+# lr = LogisticRegression(max_iter=10000000, random_state=42)
+
+# with tuned hyperparemeter
+ada_boost = AdaBoostClassifier(learning_rate=0.1, n_estimators=200)
+grad_boost = GradientBoostingClassifier(learning_rate=0.01, max_depth=7, subsample=1.0)
+xgb_boost = XGBClassifier(learning_rate=0.01, max_depth=3, n_estimators=500)
 eclf = EnsembleVoteClassifier(clfs=[ada_boost, grad_boost, xgb_boost], voting='hard')
+lr = LogisticRegression(C=1, penalty='l2', max_iter=100000)
 
 # Build array of classifiers.
-classifiers = [ada_boost, grad_boost, xgb_boost, eclf]
+classifiers = [ada_boost, grad_boost, xgb_boost, eclf, lr]
 
 # Set up KFold cross-validation
-kf = KFold(n_splits=5, shuffle=True)
+kf = KFold(n_splits=10, shuffle=True)
 
 # Loop through the classifiers and perform cross-validation
 for clf in classifiers:
@@ -56,13 +72,19 @@ for clf in classifiers:
         all_precision_scores.append(precision)
         all_recall_scores.append(recall)
         all_f1_scores.append(f1)
+
     # Compute the average evaluation metrics across all folds for this classifier
-    avg_accuracy = sum(all_accuracy_scores) / len(all_accuracy_scores)
-    avg_precision = sum(all_precision_scores) / len(all_precision_scores)
-    avg_recall = sum(all_recall_scores) / len(all_recall_scores)
-    avg_f1 = sum(all_f1_scores) / len(all_f1_scores)
+    avg_accuracy = np.mean(all_accuracy_scores)
+    std_accuracy = np.std(all_accuracy_scores)
+    avg_precision = np.mean(all_precision_scores)
+    std_precision = np.std(all_precision_scores)
+    avg_recall = np.mean(all_recall_scores)
+    std_recall = np.std(all_recall_scores)
+    avg_f1 = np.mean(all_f1_scores)
+    std_f1 = np.std(all_f1_scores)
     # Print the evaluation metrics for this classifier
-    print("Accuracy:", avg_accuracy)
-    print("Precision:", avg_precision)
-    print("Recall:", avg_recall)
-    print("F1-score:", avg_f1)
+    print("\nAverage evaluation metrics over cross fold validation folds:")
+    print(f"Accuracy:\tmean: {avg_accuracy} \tstd: {std_accuracy}")
+    print(f"Precision: \t{avg_precision} \tstd: {std_precision}")
+    print(f"Recall: \tmean: {avg_recall} \ttsd: {std_recall}")
+    print(f"F1-score: \t{avg_f1} \tstd: {std_f1}")
