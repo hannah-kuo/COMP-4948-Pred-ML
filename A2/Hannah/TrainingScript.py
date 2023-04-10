@@ -115,18 +115,42 @@ def create_nn_model(num_neurons=10, num_layers=1, activation_func='relu', kernel
         model.add(Dense(num_neurons, activation=activation_func, kernel_initializer=kernel_initializer))
     model.add(Dense(1, activation='linear'))
 
-    return model, {"optimizer": Adam(), "loss": 'mean_squared_error', "metrics": ['mean_squared_error']}
+    model.compile(optimizer=Adam(), loss='mean_squared_error', metrics=['mean_squared_error'])
+
+    return model
 
 
 # Create the KerasRegressor and fit it to the training data
-nn_model = KerasRegressor(model=create_nn_model, epochs=100, batch_size=32, verbose=0)
-grid_search = GridSearchCV(estimator=nn_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3, verbose=0)
+nn_model = KerasRegressor(
+    build_fn=create_nn_model,
+    epochs=100,
+    batch_size=32,
+    verbose=0
+)
+
+param_grid = {
+    'epochs': [100],
+    'batch_size': [32],
+    'num_neurons': [10, 20],
+    'num_layers': [1, 2],
+    'activation_func': ['relu', 'tanh'],
+    'kernel_initializer': ['uniform', 'normal']
+}
+
+grid_search = GridSearchCV(
+    estimator=nn_model,
+    param_grid=param_grid,
+    scoring='neg_mean_squared_error',
+    cv=3,
+    verbose=0
+)
+
 grid_result = grid_search.fit(X_train_scaled, y_train)
 
-# Create the KerasRegressor and fit it to the training data
-nn_model = KerasRegressor(build_fn=create_nn_model, epochs=100, batch_size=32, verbose=0)
-grid_search = GridSearchCV(estimator=nn_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3, verbose=0)
-grid_result = grid_search.fit(X_train_scaled, y_train)
+# Remove these lines
+# nn_model = KerasRegressor(build_fn=create_nn_model, epochs=100, batch_size=32, verbose=0)
+# grid_search = GridSearchCV(estimator=nn_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3, verbose=0)
+# grid_result = grid_search.fit(X_train_scaled, y_train)
 
 # Get the best hyperparameters from GridSearchCV
 best_params = grid_result.best_params_
