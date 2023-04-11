@@ -267,194 +267,128 @@ plt.xlabel('Epoch')
 plt.legend(['Training Loss', 'Validation Loss'])
 plt.show()
 
-""" 
-# Function to create a neural network model
-def create_model(layers, activation, kernel_initializer, optimizer):
-    model = Sequential()
-    for i, nodes in enumerate(layers):
-        if i == 0:
-            model.add(Dense(nodes, input_dim=X_train_scaled.shape[1], kernel_initializer=kernel_initializer,
-                            activation=activation))
-        else:
-            model.add(Dense(nodes, kernel_initializer=kernel_initializer, activation=activation))
-    model.add(Dense(1))
+# --------------------------------------------------------------
+# Model 4: Stacked Model
+# --------------------------------------------------------------
 
-    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
+print("=======START OF STACKED MODEL CODE======")
+
+
+# TODO: Change the combo here
+def getUnfitModels():
+    models = list()
+    models.append(ElasticNet())
+    models.append(DecisionTreeRegressor())
+    models.append(AdaBoostRegressor())
+    models.append(RandomForestRegressor(n_estimators=200))
+    models.append(ExtraTreesRegressor(n_estimators=200))
+    models.append(nn_model)
+    models.append(third_model)
+    return models
+
+
+def evaluateModel(y_test, predictions, model):
+    mse = mean_squared_error(y_test, predictions)
+    rmse = round(np.sqrt(mse), 3)
+    rsquared = r2_score(y_test, predictions)
+    print(" RMSE:" + str(rmse) + " R2:  " + str(rsquared) + " " + model.__class__.__name__)
+
+
+def fitBaseModels(X_train, y_train, X_val, models):
+    dfPredictions = pd.DataFrame()
+
+    # Fit base model and store its predictions in dataframe.
+    for i in range(0, len(models)):
+        if isinstance(models[i], Sequential):
+            models[i].fit(X_train_scaled, y_train)
+            predictions = models[i].predict(X_val_scaled)
+        else:
+            models[i].fit(X_train, y_train)
+            predictions = models[i].predict(X_val)
+
+        colName = str(i)
+        # Add base model predictions to column of data frame.
+        dfPredictions[colName] = predictions[:, 0] if isinstance(models[i], Sequential) else predictions
+    return dfPredictions, models
+
+
+def fitStackedModel(X, y):
+    model = LinearRegression()
+    model.fit(X, y)
     return model
 
 
-# Wrap the Keras model with KerasRegressor
-# nn_model = KerasRegressor(model=create_model, verbose=0, learning_rate=0.001)
-# nn_model = KerasRegressor(build_fn=create_model, verbose=0)
-keras_model = KerasRegressor(build_fn=create_model)
+def plot_loss_and_metrics(model_name, y_true, y_pred):
+    print(f"====Model {model_name} ====")
+    mse = mean_squared_error(y_true, y_pred)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y_true, y_pred)
+    r2 = r2_score(y_true, y_pred)
+    print(f"MSE: {mse:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"MAE: {mae:.4f}")
+    print(f'R^2 Score: {r2:.4f}')
+    print(f"==== # ====")
 
-# Define the parameter search space
-# param_space = {
-#     'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
-#     'activation': ['relu', 'tanh'],
-#     'kernel_initializer': ['glorot_uniform', 'he_uniform'],
-#     'learning_rate': [0.001, 0.01, 0.1],
-#     'batch_size': [16, 32],
-#     'epochs': [50, 100]
-# }
-# param_space = {
-#     'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
-#     'activation': ['relu', 'tanh'],
-#     'kernel_initializer': ['glorot_uniform', 'he_uniform'],
-#     'learning_rate': [0.001, 0.01, 0.1],
-#     'batch_size': [16, 32],
-#     'epochs': [50, 100]
-# }
 
-from keras.optimizers import Adam, SGD, RMSprop
+def showLosses(model):
+    plt.plot(model.loss_curve_)
+    plt.title("Loss Curve")
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.show()
 
-# Define the parameter space for the neural network
-param_space = {
-    'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
-    'activation': ['relu', 'tanh'],
-    'kernel_initializer': ['glorot_uniform', 'he_uniform'],
-    'optimizer': [Adam(learning_rate=0.001), Adam(learning_rate=0.01), Adam(learning_rate=0.1),
-                  SGD(learning_rate=0.001), SGD(learning_rate=0.01), SGD(learning_rate=0.1),
-                  RMSprop(learning_rate=0.001), RMSprop(learning_rate=0.01), RMSprop(learning_rate=0.1)],
-    'batch_size': [16, 32],
-    'epochs': [50, 100]
+
+# Split data into train, test and validation sets.
+X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.70)
+X_test, X_val, y_test, y_val = train_test_split(X_temp, y_temp, test_size=0.50)
+
+X_train_scaled = scaler.transform(X_train)
+X_val_scaled = scaler.transform(X_val)
+
+# Get base models.
+unfitModels = getUnfitModels()
+
+# Fit base and stacked models.
+dfPredictions, models = fitBaseModels(X_train, y_train, X_val, unfitModels)
+stackedModel = fitStackedModel(dfPredictions, y_val)
+print("Object type before pickling:", type(stackedModel))
+joblib.dump(stackedModel, "BinaryFolder/stacked_model.pkl")
+
+# Evaluate base models with validation data.
+print("\n** Evaluate Base Models **")
+dfValidationPredictions = pd.DataFrame()
+for i in range(0, len(models)):
+    predictions = models[i].predict(X_test)
+    colName = str(i)
+    dfValidationPredictions[colName] = predictions
+    evaluateModel(y_test, predictions, models[i])
+
+# Evaluate stacked model with validation data.
+stackedPredictions = stackedModel.predict(dfValidationPredictions)
+print("\n** Evaluate Stacked Model **")
+evaluateModel(y_test, stackedPredictions, stackedModel)
+showLosses(model)
+
+results['Model 5 Stacked Linear Regression'] = {
+    'R-squared': r2_score(y_test, stackedPredictions),
+    'RMSE': np.sqrt(mean_squared_error(y_test, stackedPredictions)),
+    'MSE': mean_squared_error(y_test, stackedPredictions),
+    'MAE': mean_absolute_error(y_test, stackedPredictions)
 }
 
-# Create RandomizedSearchCV with the KerasRegressor and parameter space
-random_search = RandomizedSearchCV(estimator=keras_model, param_distributions=param_space, n_iter=100, cv=3, n_jobs=-1)
-
-# Fit the random search model
-random_search.fit(X_train_scaled, y_train)
-
-# Print the best parameters
-print("Best parameters to use for the neural network")
-print(random_search.best_params_)
-
-# Train the model with the best hyperparameters and evaluate it
-best_model = random_search.best_estimator_
-nn_predictions = best_model.predict(X_test_scaled)
-
-results['Neural Network'] = {
-    'R-squared': r2_score(y_test, nn_predictions),
-    'RMSE': np.sqrt(mean_squared_error(y_test, nn_predictions)),
-    'MSE': mean_squared_error(y_test, nn_predictions),
-    'MAE': mean_absolute_error(y_test, nn_predictions)
-}
-
-# Print the results of each model
-for model_name, metrics in results.items():
-    print(model_name)
+# Print results
+for model_temp, metrics in results.items():
+    print(model_temp)
     print(metrics)
     print("\n")
 
-print("----------------------------------------")
+# Save base models and scalers
+for i, model in enumerate(unfitModels):
+    if i == 6:
+        break
+    else:
+        joblib.dump(model, f"BinaryFolder/base_model_{i}.pkl")
 
-"""
-
-""" 
-# Prepare data for Model 2 and Model 3
-X = df[feature_columns]
-y = df[target_variable]
-
-X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.2)
-X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.2)
-
-scaler = MinMaxScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_val_scaled = scaler.fit_transform(X_val)
-X_test_scaled = scaler.transform(X_test)
-
-from sklearn.model_selection import GridSearchCV
-
-# Set the hyperparameters for GridSearchCV
-param_grid = {
-    'num_neurons': [10, 20, 30],
-    'num_layers': [1, 2, 3],
-    'activation_func': ['relu', 'tanh'],
-    'kernel_initializer': ['uniform', 'normal']
-}
-
-from scikeras.wrappers import KerasRegressor
-
-
-# Helper function to create the Neural Network model for GridSearchCV
-def create_nn_model(num_neurons=10, num_layers=1, activation_func='relu', kernel_initializer='uniform'):
-    model = Sequential()
-    model.add(Dense(num_neurons, input_dim=len(feature_columns), activation=activation_func,
-                    kernel_initializer=kernel_initializer))
-    for i in range(num_layers - 1):
-        model.add(Dense(num_neurons, activation=activation_func, kernel_initializer=kernel_initializer))
-    model.add(Dense(1, activation='linear'))
-
-    model.compile(optimizer=Adam(), loss='mean_squared_error', metrics=['mean_squared_error'])
-
-    return model
-
-
-# Create the KerasRegressor and fit it to the training data
-nn_model = KerasRegressor(
-    build_fn=create_nn_model,
-    epochs=100,
-    batch_size=32,
-    verbose=0,
-    num_neurons=10,
-    num_layers=1,
-    activation_func='relu',
-    kernel_initializer='uniform'
-)
-
-param_grid = {
-    'epochs': [100],
-    'batch_size': [32],
-    'num_neurons': [10, 20],
-    'num_layers': [1, 2],
-    'activation_func': ['relu', 'tanh'],
-    'kernel_initializer': ['uniform', 'normal']
-}
-
-grid_search = GridSearchCV(
-    estimator=nn_model,
-    param_grid=param_grid,
-    scoring='neg_mean_squared_error',
-    cv=3,
-    verbose=0
-)
-
-# # verbose=2 helps us understand how long it might take to complete.
-# grid_search = GridSearchCV(
-#     estimator=nn_model,
-#     param_grid=param_grid,
-#     scoring='neg_mean_squared_error',
-#     cv=3,
-#     verbose=2
-# )
-
-
-grid_result = grid_search.fit(X_train_scaled, y_train)
-
-# Remove these lines
-# nn_model = KerasRegressor(build_fn=create_nn_model, epochs=100, batch_size=32, verbose=0)
-# grid_search = GridSearchCV(estimator=nn_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3, verbose=0)
-# grid_result = grid_search.fit(X_train_scaled, y_train)
-
-# Get the best hyperparameters from GridSearchCV
-best_params = grid_result.best_params_
-num_neurons = best_params['num_neurons']
-num_layers = best_params['num_layers']
-activation_func = best_params['activation_func']
-kernel_initializer = best_params['kernel_initializer']
-
-# Model 2
-nn_model2 = Sequential()
-nn_model2.add(Dense(10, activation='relu', input_dim=len(feature_columns)))
-nn_model2.add(Dense(10, activation='relu'))
-nn_model2.add(Dense(1, activation='linear'))
-
-# Model 3
-nn_model3 = Sequential()
-nn_model3.add(Dense(num_neurons, input_dim=len(feature_columns), activation=activation_func,
-                    kernel_initializer=kernel_initializer))
-for i in range(num_layers - 1):
-    nn_model3.add(Dense(num_neurons, activation=activation_func, kernel_initializer=kernel_initializer))
-nn_model3.add(Dense(1, activation='linear'))
-"""
+# Save MinMaxScaler
+joblib.dump(scaler, "BinaryFolder/scaler.pkl")
