@@ -97,16 +97,93 @@ print('Root Mean Squared Error:',
 # Model 2: Neural Network model
 # --------------------------------------------------------------
 
+# Neural Network model with 2 hidden layers
+# nn_model = Sequential()
+# nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))  # input layer
+# nn_model.add(Dense(10, activation='relu'))  # first hidden layer
+# nn_model.add(Dense(10, activation='relu'))  # second hidden layer
+# nn_model.add(Dense(1, activation='linear'))  # output layer
+#
+# nn_model.compile(optimizer='adam', loss='mean_squared_error')
+# history = nn_model.fit(X_train_scaled, y_train, batch_size=16, epochs=50, validation_split=0.2)
+# nn_predictions = nn_model.predict(X_test_scaled)
+#
+# results['Neural Network'] = {
+#     'R-squared': r2_score(y_test, nn_predictions),
+#     'RMSE': np.sqrt(mean_squared_error(y_test, nn_predictions)),
+#     'MSE': mean_squared_error(y_test, nn_predictions),
+#     'MAE': mean_absolute_error(y_test, nn_predictions)
+# }
+#
+# # Print the results of each model
+# for model_name, metrics in results.items():
+#     print(model_name)
+#     print(metrics)
+#     print("\n")
 
-nn_model = Sequential()
-# 3 layers of neural network
-nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))  # input layer
-nn_model.add(Dense(10, activation='relu'))  # hidden layer
-nn_model.add(Dense(1, activation='linear'))  # output layer
+# --------------------------------------------------------------
+# Model 3: Neural Network model with Tuned Hyper-parameters
+# --------------------------------------------------------------
 
-nn_model.compile(optimizer='adam', loss='mean_squared_error')
-history = nn_model.fit(X_train_scaled, y_train, batch_size=16, epochs=50, validation_split=0.2)
-nn_predictions = nn_model.predict(X_test_scaled)
+from scikeras.wrappers import KerasRegressor
+from sklearn.model_selection import RandomizedSearchCV
+import numpy as np
+
+
+# Function to create a neural network model
+def create_model(layers, activation, kernel_initializer, learning_rate):
+    model = Sequential()
+    for i, nodes in enumerate(layers):
+        if i == 0:
+            model.add(Dense(nodes, activation=activation, input_dim=len(X_train_scaled.columns),
+                            kernel_initializer=kernel_initializer))
+        else:
+            model.add(Dense(nodes, activation=activation, kernel_initializer=kernel_initializer))
+    model.add(Dense(1, activation='linear', kernel_initializer=kernel_initializer))  # output layer
+    model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate), loss='mean_squared_error')
+    return model
+
+
+# Wrap the Keras model with KerasRegressor
+# nn_model = KerasRegressor(model=create_model, verbose=0, learning_rate=0.001)
+# nn_model = KerasRegressor(build_fn=create_model, verbose=0)
+nn_model = KerasRegressor(build_fn=create_model, verbose=0)
+
+# Define the parameter search space
+# param_space = {
+#     'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
+#     'activation': ['relu', 'tanh'],
+#     'kernel_initializer': ['glorot_uniform', 'he_uniform'],
+#     'learning_rate': [0.001, 0.01, 0.1],
+#     'batch_size': [16, 32],
+#     'epochs': [50, 100]
+# }
+param_space = {
+    'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
+    'activation': ['relu', 'tanh'],
+    'kernel_initializer': ['glorot_uniform', 'he_uniform'],
+    'learning_rate': [0.001, 0.01, 0.1],
+    'batch_size': [16, 32],
+    'epochs': [50, 100]
+}
+
+# Create the RandomizedSearchCV instance
+random_search = RandomizedSearchCV(estimator=nn_model,
+                                   param_distributions=param_space,
+                                   n_iter=100,  # number of iterations
+                                   cv=3,
+                                   n_jobs=1,  # use all available cores
+                                   verbose=2)
+
+# Perform the random search
+random_search.fit(X_train_scaled, y_train)
+
+# Print the best hyperparameters found
+print("Best hyperparameters: ", random_search.best_params_)
+
+# Train the model with the best hyperparameters and evaluate it
+best_model = random_search.best_estimator_
+nn_predictions = best_model.predict(X_test_scaled)
 
 results['Neural Network'] = {
     'R-squared': r2_score(y_test, nn_predictions),
@@ -120,6 +197,8 @@ for model_name, metrics in results.items():
     print(model_name)
     print(metrics)
     print("\n")
+
+print("----------------------------------------")
 
 """ 
 # Prepare data for Model 2 and Model 3
