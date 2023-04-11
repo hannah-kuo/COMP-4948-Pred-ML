@@ -37,6 +37,7 @@ from keras.optimizers import Adam
 from scikeras.wrappers import KerasRegressor
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 import warnings
 
@@ -99,7 +100,6 @@ print(model.summary())
 print('Root Mean Squared Error:',
       np.sqrt(metrics.mean_squared_error(y_test, predictions)))
 
-
 # --------------------------------------------------------------
 # Model 2: Neural Network model
 # --------------------------------------------------------------
@@ -127,6 +127,7 @@ for model_name, metrics in results.items():
     print(model_name)
     print(metrics)
     print("\n")
+
 
 # --------------------------------------------------------------
 # Grid Search for Optimal Neural Network Hyper-parameters
@@ -204,7 +205,7 @@ def create_model(layers, activation, kernel_initializer, learning_rate):
 
 
 # Best hyperparameters from the grid search
-layers = (30, 30)  # With additional hidden layer
+layers = (30, 30)  # 2 hidden layers
 activation = 'relu'
 kernel_initializer = 'he_uniform'
 learning_rate = 0.001
@@ -234,6 +235,18 @@ for model_name, metrics in results.items():
     print(model_name)
     print(metrics)
     print("\n")
+
+es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, min_delta=0.000001, patience=200)
+mc = ModelCheckpoint('BinaryFolder/best_model3.h5', monitor='val_loss', mode='min', verbose=1,
+                     save_best_only=True)
+third_model_history = third_model.fit(X_train_scaled, y_train, batch_size=batch_size, epochs=epochs,
+                                      validation_split=0.2, callbacks=[es, mc])
+third_model.save('BinaryFolder/sequential_NN_model3.pkl')
+from keras.models import load_model
+
+best_third_model = load_model('BinaryFolder/best_model3.h5')
+third_model_predictions = best_third_model.predict(X_test_scaled)
+
 
 """ 
 # Function to create a neural network model
