@@ -125,22 +125,41 @@ print('Root Mean Squared Error:',
 # Model 3: Neural Network model with Tuned Hyper-parameters
 # --------------------------------------------------------------
 
+rf = RandomForestRegressor(max_features=1.0)
+random_grid = {'bootstrap': [True],
+               'max_depth': [4, 6, None],
+               'max_features': ['auto'],
+               'min_samples_leaf': [15],
+               'min_samples_split': [15],
+               'n_estimators': [400, 800, 1600]}
+
+rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, n_jobs=-1)
+# Fit the random search model
+rf_random.fit(X_train, y_train)
+print("Best parameters to use for random forest")
+print(rf_random.best_params_)
+# Best parameters to use for random forest
+# {'n_estimators': 1600, 'min_samples_split': 15, 'min_samples_leaf': 15, 'max_features': 'auto', 'max_depth': 6, 'bootstrap': True}
+
+"""
 from scikeras.wrappers import KerasRegressor
 from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
+from keras.optimizers import Adam
 
 
 # Function to create a neural network model
-def create_model(layers, activation, kernel_initializer, learning_rate):
+def create_model(layers, activation, kernel_initializer, optimizer):
     model = Sequential()
     for i, nodes in enumerate(layers):
         if i == 0:
-            model.add(Dense(nodes, activation=activation, input_dim=len(X_train_scaled.columns),
-                            kernel_initializer=kernel_initializer))
+            model.add(Dense(nodes, input_dim=X_train_scaled.shape[1], kernel_initializer=kernel_initializer,
+                            activation=activation))
         else:
-            model.add(Dense(nodes, activation=activation, kernel_initializer=kernel_initializer))
-    model.add(Dense(1, activation='linear', kernel_initializer=kernel_initializer))  # output layer
-    model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate), loss='mean_squared_error')
+            model.add(Dense(nodes, kernel_initializer=kernel_initializer, activation=activation))
+    model.add(Dense(1))
+
+    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
     return model
 
 
@@ -158,11 +177,24 @@ nn_model = KerasRegressor(build_fn=create_model, verbose=0)
 #     'batch_size': [16, 32],
 #     'epochs': [50, 100]
 # }
+# param_space = {
+#     'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
+#     'activation': ['relu', 'tanh'],
+#     'kernel_initializer': ['glorot_uniform', 'he_uniform'],
+#     'learning_rate': [0.001, 0.01, 0.1],
+#     'batch_size': [16, 32],
+#     'epochs': [50, 100]
+# }
+
+from keras.optimizers import Adam, SGD, RMSprop
+
 param_space = {
     'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
     'activation': ['relu', 'tanh'],
     'kernel_initializer': ['glorot_uniform', 'he_uniform'],
-    'learning_rate': [0.001, 0.01, 0.1],
+    'optimizer': [Adam(learning_rate=0.001), Adam(learning_rate=0.01), Adam(learning_rate=0.1),
+                  SGD(learning_rate=0.001), SGD(learning_rate=0.01), SGD(learning_rate=0.1),
+                  RMSprop(learning_rate=0.001), RMSprop(learning_rate=0.01), RMSprop(learning_rate=0.1)],
     'batch_size': [16, 32],
     'epochs': [50, 100]
 }
@@ -199,6 +231,7 @@ for model_name, metrics in results.items():
     print("\n")
 
 print("----------------------------------------")
+"""
 
 """ 
 # Prepare data for Model 2 and Model 3
