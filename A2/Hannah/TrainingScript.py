@@ -89,7 +89,6 @@ results = {}
 model = sm.OLS(y_train, X_train_scaled).fit()
 
 predictions = model.predict(X_test_scaled)
-# plot_loss_and_metrics("MinMaxScaled OLS Model (['age', 'annual Salary', 'net worth'])",y_test, predictions)
 results['Model 1 OLS'] = {
     'R-squared': r2_score(y_test, predictions),
     'RMSE': np.sqrt(mean_squared_error(y_test, predictions)),
@@ -106,28 +105,28 @@ print('Root Mean Squared Error:',
 # --------------------------------------------------------------
 
 # Neural Network model with 2 hidden layers
-# nn_model = Sequential()
-# nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))  # input layer
-# nn_model.add(Dense(10, activation='relu'))  # first hidden layer
-# nn_model.add(Dense(10, activation='relu'))  # second hidden layer
-# nn_model.add(Dense(1, activation='linear'))  # output layer
-#
-# nn_model.compile(optimizer='adam', loss='mean_squared_error')
-# history = nn_model.fit(X_train_scaled, y_train, batch_size=16, epochs=50, validation_split=0.2)
-# nn_predictions = nn_model.predict(X_test_scaled)
-#
-# results['Neural Network'] = {
-#     'R-squared': r2_score(y_test, nn_predictions),
-#     'RMSE': np.sqrt(mean_squared_error(y_test, nn_predictions)),
-#     'MSE': mean_squared_error(y_test, nn_predictions),
-#     'MAE': mean_absolute_error(y_test, nn_predictions)
-# }
-#
-# # Print the results of each model
-# for model_name, metrics in results.items():
-#     print(model_name)
-#     print(metrics)
-#     print("\n")
+nn_model = Sequential()
+nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))  # input layer
+nn_model.add(Dense(10, activation='relu'))  # first hidden layer
+nn_model.add(Dense(10, activation='relu'))  # second hidden layer
+nn_model.add(Dense(1, activation='linear'))  # output layer
+
+nn_model.compile(optimizer='adam', loss='mean_squared_error')
+history = nn_model.fit(X_train_scaled, y_train, batch_size=16, epochs=50, validation_split=0.2)
+nn_predictions = nn_model.predict(X_test_scaled)
+
+results['Neural Network'] = {
+    'R-squared': r2_score(y_test, nn_predictions),
+    'RMSE': np.sqrt(mean_squared_error(y_test, nn_predictions)),
+    'MSE': mean_squared_error(y_test, nn_predictions),
+    'MAE': mean_absolute_error(y_test, nn_predictions)
+}
+
+# Print the results of each model
+for model_name, metrics in results.items():
+    print(model_name)
+    print(metrics)
+    print("\n")
 
 # --------------------------------------------------------------
 # Grid Search for Optimal Neural Network Hyper-parameters
@@ -188,7 +187,7 @@ print('Root Mean Squared Error:',
 # --------------------------------------------------------------
 
 
-# Define the model
+# Define the model with best parameters
 def create_model(layers, activation, kernel_initializer, learning_rate):
     model = Sequential()
     for i, layer_size in enumerate(layers):
@@ -205,7 +204,7 @@ def create_model(layers, activation, kernel_initializer, learning_rate):
 
 
 # Best hyperparameters from the grid search
-layers = (30,)
+layers = (30, 30)  # With additional hidden layer
 activation = 'relu'
 kernel_initializer = 'he_uniform'
 learning_rate = 0.001
