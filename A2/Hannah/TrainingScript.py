@@ -215,13 +215,26 @@ epochs = 100  # You can adjust this value if you want
 # Create the third model
 third_model = create_model(layers, activation, kernel_initializer, learning_rate)
 
-# Train the model
-third_model.fit(X_train_scaled, y_train, batch_size=batch_size, epochs=epochs)
+# Train the third model
+third_model_history = third_model.fit(X_train_scaled, y_train, batch_size=batch_size, epochs=epochs,
+                                      validation_split=0.2)
 
-y_pred = third_model.predict(X_test_scaled)
+# Make predictions with the third model
+third_model_predictions = third_model.predict(X_test_scaled)
 
-loss = third_model.evaluate(X_test_scaled, y_test)
+# Evaluate the third model
+results['Third Model'] = {
+    'R-squared': r2_score(y_test, third_model_predictions),
+    'RMSE': np.sqrt(mean_squared_error(y_test, third_model_predictions)),
+    'MSE': mean_squared_error(y_test, third_model_predictions),
+    'MAE': mean_absolute_error(y_test, third_model_predictions)
+}
 
+# Print the results of each model
+for model_name, metrics in results.items():
+    print(model_name)
+    print(metrics)
+    print("\n")
 
 """ 
 # Function to create a neural network model
