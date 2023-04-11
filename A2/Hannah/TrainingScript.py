@@ -59,6 +59,8 @@ df = pd.get_dummies(df, columns=['year'])
 
 # Define the feature columns and target variable
 feature_columns = ['4046', '4225', '4770', 'Total Bags', 'Small Bags', 'Large Bags', 'XLarge Bags']
+
+# TODO: Remove insignificant variables
 target_variable = 'AveragePrice'
 
 # --------------------------------------------------------------
@@ -69,11 +71,18 @@ target_variable = 'AveragePrice'
 X = df[feature_columns]
 y = df[target_variable]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=42)  # 0.25 x 0.8 = 0.2
 
+# Drop the 'region' column for train, validation, and test datasets
+X_train = X_train.drop(columns=["region"])
+X_val = X_val.drop(columns=["region"])
+X_test = X_test.drop(columns=["region"])
+
+# Data scaling
 scaler = MinMaxScaler()
-# Scale the data
 X_train_scaled = scaler.fit_transform(X_train)
+X_val_scaled = scaler.transform(X_val)
 X_test_scaled = scaler.transform(X_test)
 
 # Convert scaled data back to DataFrames and assign original column names
