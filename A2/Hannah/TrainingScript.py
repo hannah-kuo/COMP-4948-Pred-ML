@@ -37,9 +37,10 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=DataConversionWarning)
 
-# Your original functions remain unchanged
+# --------------------------------------------------------------
+# DATA LOADING & CLEANING
+# --------------------------------------------------------------
 
-################################# DATA LOADING & CLEANING #################################
 # Load the dataset
 PATH = "C:/PredML/A2/avocado.csv"
 df = pd.read_csv(PATH)
@@ -52,7 +53,9 @@ df = pd.get_dummies(df, columns=['year'])
 feature_columns = ['4046', '4225', '4770', 'Total Bags', 'Small Bags', 'Large Bags', 'XLarge Bags']
 target_variable = 'AveragePrice'
 
-#### Model 1: OLS with selected feature_columns + MinMaxScaler
+# --------------------------------------------------------------
+# Model 1: OLS with selected feature_columns + MinMaxScaler
+# --------------------------------------------------------------
 
 # Split data into train and test sets
 X = df[feature_columns]
@@ -72,7 +75,6 @@ X_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns, index=X_test
 X_train_scaled = sm.add_constant(X_train_scaled)
 X_test_scaled = sm.add_constant(X_test_scaled)
 
-
 # Create a dictionary to store the results of each model
 results = {}
 
@@ -90,6 +92,33 @@ results['Model 1 OLS'] = {
 print(model.summary())
 print('Root Mean Squared Error:',
       np.sqrt(metrics.mean_squared_error(y_test, predictions)))
+
+# --------------------------------------------------------------
+# Model 2: Neural Network model
+# --------------------------------------------------------------
+
+
+nn_model = Sequential()
+nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))
+nn_model.add(Dense(10, activation='relu'))
+nn_model.add(Dense(1, activation='linear'))
+
+nn_model.compile(optimizer='adam', loss='mean_squared_error')
+history = nn_model.fit(X_train_scaled, y_train, batch_size=16, epochs=50, validation_split=0.2)
+nn_predictions = nn_model.predict(X_test_scaled)
+
+results['Neural Network'] = {
+    'R-squared': r2_score(y_test, nn_predictions),
+    'RMSE': np.sqrt(mean_squared_error(y_test, nn_predictions)),
+    'MSE': mean_squared_error(y_test, nn_predictions),
+    'MAE': mean_absolute_error(y_test, nn_predictions)
+}
+
+# Print the results of each model
+for model_name, metrics in results.items():
+    print(model_name)
+    print(metrics)
+    print("\n")
 
 """ 
 # Prepare data for Model 2 and Model 3
