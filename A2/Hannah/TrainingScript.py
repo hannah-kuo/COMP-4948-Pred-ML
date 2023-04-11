@@ -99,9 +99,10 @@ print('Root Mean Squared Error:',
 
 
 nn_model = Sequential()
-nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))
-nn_model.add(Dense(10, activation='relu'))
-nn_model.add(Dense(1, activation='linear'))
+# 3 layers of neural network
+nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))  # input layer
+nn_model.add(Dense(10, activation='relu'))  # hidden layer
+nn_model.add(Dense(1, activation='linear'))  # output layer
 
 nn_model.compile(optimizer='adam', loss='mean_squared_error')
 history = nn_model.fit(X_train_scaled, y_train, batch_size=16, epochs=50, validation_split=0.2)
