@@ -247,6 +247,25 @@ from keras.models import load_model
 best_third_model = load_model('BinaryFolder/best_model3.h5')
 third_model_predictions = best_third_model.predict(X_test_scaled)
 
+results['Model 3 grid-chosen param; Loaded from pkl'] = {
+    'R-squared': r2_score(y_test, third_model_predictions),
+    'RMSE': np.sqrt(mean_squared_error(y_test, third_model_predictions)),
+    'MSE': mean_squared_error(y_test, third_model_predictions),
+    'MAE': mean_absolute_error(y_test, third_model_predictions)
+}
+
+print("RMSE m3: " + str(np.sqrt(mean_squared_error(y_test, third_model_predictions))))
+
+val_loss = third_model.evaluate(X_test_scaled, y_test)
+print('Validation loss M3:', val_loss)
+
+plt.plot(third_model_history.history['loss'])
+plt.plot(third_model_history.history['val_loss'])
+plt.title('Model Loss During Training or Validation (gridchosen param-M3)')
+plt.ylabel('Training & Validation Losses')
+plt.xlabel('Epoch')
+plt.legend(['Training Loss', 'Validation Loss'])
+plt.show()
 
 """ 
 # Function to create a neural network model
