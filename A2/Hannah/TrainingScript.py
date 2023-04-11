@@ -125,7 +125,11 @@ nn_model = KerasRegressor(
     build_fn=create_nn_model,
     epochs=100,
     batch_size=32,
-    verbose=0
+    verbose=0,
+    num_neurons=10,
+    num_layers=1,
+    activation_func='relu',
+    kernel_initializer='uniform'
 )
 
 param_grid = {
@@ -144,6 +148,16 @@ grid_search = GridSearchCV(
     cv=3,
     verbose=0
 )
+
+# # verbose=2 helps us understand how long it might take to complete.
+# grid_search = GridSearchCV(
+#     estimator=nn_model,
+#     param_grid=param_grid,
+#     scoring='neg_mean_squared_error',
+#     cv=3,
+#     verbose=2
+# )
+
 
 grid_result = grid_search.fit(X_train_scaled, y_train)
 
