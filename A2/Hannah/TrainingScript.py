@@ -125,29 +125,78 @@ print('Root Mean Squared Error:',
 # Model 3: Neural Network model with Tuned Hyper-parameters
 # --------------------------------------------------------------
 
-rf = RandomForestRegressor(max_features=1.0)
-random_grid = {'bootstrap': [True],
-               'max_depth': [4, 6, None],
-               'max_features': ['auto'],
-               'min_samples_leaf': [15],
-               'min_samples_split': [15],
-               'n_estimators': [400, 800, 1600]}
-
-rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, n_jobs=-1)
-# Fit the random search model
-rf_random.fit(X_train, y_train)
-print("Best parameters to use for random forest")
-print(rf_random.best_params_)
-# Best parameters to use for random forest
-# {'n_estimators': 1600, 'min_samples_split': 15, 'min_samples_leaf': 15, 'max_features': 'auto', 'max_depth': 6, 'bootstrap': True}
-
-"""
 from scikeras.wrappers import KerasRegressor
 from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
 from keras.optimizers import Adam
 
+"""
+Create NN Model
+"""
+from keras.optimizers import Adam, RMSprop
 
+
+def create_nn_model(optimizer='adam', neurons=10, lr=0.001, activation='relu', initializer='he_normal'):
+    model = Sequential()
+    model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=8))
+    model.add(Dense(neurons, activation=activation, kernel_initializer=initializer))
+    model.add(Dense(1, activation='linear'))
+
+    if optimizer == 'adam':
+        opt = Adam(learning_rate=lr)
+    elif optimizer == 'rmsprop':
+        opt = RMSprop(learning_rate=lr)
+
+    model.compile(optimizer=opt, loss='mean_squared_error')
+    return model
+
+
+# Define the grid search parameters
+param_grid = {
+    'optimizer': ['adam', 'rmsprop'],
+    'neurons': [10, 20, 30],
+    'lr': [0.001, 0.01, 0.1],
+    'activation': ['relu', 'tanh'],
+    'initializer': ['he_normal', 'he_uniform']
+}
+
+"""
+Perform Grid Search
+"""
+from skopt import BayesSearchCV
+from skopt.space import Real, Categorical, Integer
+from keras.optimizers import Adam
+from scikeras.wrappers import KerasRegressor
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
+
+# Create a KerasRegressor model
+nn_model = KerasRegressor(build_fn=create_nn_model, epochs=50, batch_size=16, verbose=0, optimizer='adam', neurons=10,
+                          lr=0.001, activation='relu', initializer='he_normal')
+
+# Define the search space
+search_space = {
+    'optimizer': Categorical(['adam', 'rmsprop']),
+    'neurons': Integer(10, 100),
+    'activation': Categorical(['relu', 'tanh']),
+    'lr': Real(1e-4, 1e-2, prior='log-uniform'),
+}
+
+# Perform the Grid search
+grid_search = GridSearchCV(estimator=nn_model, param_grid=param_grid, n_jobs=-1, cv=3, scoring='neg_mean_squared_error')
+grid_search_result = grid_search.fit(X_train_scaled, y_train)
+
+# Summarize the results
+print(f"Best: {grid_search_result.best_score_} using {grid_search_result.best_params_}")
+means = grid_search_result.cv_results_['mean_test_score']
+stds = grid_search_result.cv_results_['std_test_score']
+params = grid_search_result.cv_results_['params']
+for mean, stdev, param in zip(means, stds, params):
+    print(f"{mean:.4f} ({stdev:.4f}) with: {param}")
+
+
+
+""" 
 # Function to create a neural network model
 def create_model(layers, activation, kernel_initializer, optimizer):
     model = Sequential()
@@ -166,7 +215,7 @@ def create_model(layers, activation, kernel_initializer, optimizer):
 # Wrap the Keras model with KerasRegressor
 # nn_model = KerasRegressor(model=create_model, verbose=0, learning_rate=0.001)
 # nn_model = KerasRegressor(build_fn=create_model, verbose=0)
-nn_model = KerasRegressor(build_fn=create_model, verbose=0)
+keras_model = KerasRegressor(build_fn=create_model)
 
 # Define the parameter search space
 # param_space = {
@@ -188,6 +237,7 @@ nn_model = KerasRegressor(build_fn=create_model, verbose=0)
 
 from keras.optimizers import Adam, SGD, RMSprop
 
+# Define the parameter space for the neural network
 param_space = {
     'layers': [(10, 10), (20, 20), (30, 30), (10, 10, 10), (20, 20, 20), (30, 30, 30)],
     'activation': ['relu', 'tanh'],
@@ -199,19 +249,15 @@ param_space = {
     'epochs': [50, 100]
 }
 
-# Create the RandomizedSearchCV instance
-random_search = RandomizedSearchCV(estimator=nn_model,
-                                   param_distributions=param_space,
-                                   n_iter=100,  # number of iterations
-                                   cv=3,
-                                   n_jobs=1,  # use all available cores
-                                   verbose=2)
+# Create RandomizedSearchCV with the KerasRegressor and parameter space
+random_search = RandomizedSearchCV(estimator=keras_model, param_distributions=param_space, n_iter=100, cv=3, n_jobs=-1)
 
-# Perform the random search
+# Fit the random search model
 random_search.fit(X_train_scaled, y_train)
 
-# Print the best hyperparameters found
-print("Best hyperparameters: ", random_search.best_params_)
+# Print the best parameters
+print("Best parameters to use for the neural network")
+print(random_search.best_params_)
 
 # Train the model with the best hyperparameters and evaluate it
 best_model = random_search.best_estimator_
@@ -231,6 +277,7 @@ for model_name, metrics in results.items():
     print("\n")
 
 print("----------------------------------------")
+
 """
 
 """ 
