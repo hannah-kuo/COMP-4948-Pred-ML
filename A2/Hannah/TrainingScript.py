@@ -58,19 +58,29 @@ target_variable = 'AveragePrice'
 X = df[feature_columns]
 y = df[target_variable]
 
-X = sm.add_constant(X)  # double check this is needed
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
 scaler = MinMaxScaler()
+# Scale the data
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
+
+# Convert scaled data back to DataFrames and assign original column names
+X_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns, index=X_train.index)
+X_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns, index=X_test.index)
+
+X_train_scaled = sm.add_constant(X_train_scaled)
+X_test_scaled = sm.add_constant(X_test_scaled)
+
+
+# Create a dictionary to store the results of each model
+results = {}
 
 # Make predictions and evaluate with the RMSE.
 model = sm.OLS(y_train, X_train_scaled).fit()
 
 predictions = model.predict(X_test_scaled)
-results = {}
+# plot_loss_and_metrics("MinMaxScaled OLS Model (['age', 'annual Salary', 'net worth'])",y_test, predictions)
 results['Model 1 OLS'] = {
     'R-squared': r2_score(y_test, predictions),
     'RMSE': np.sqrt(mean_squared_error(y_test, predictions)),
@@ -79,8 +89,9 @@ results['Model 1 OLS'] = {
 }
 print(model.summary())
 print('Root Mean Squared Error:',
-      np.sqrt(mean_squared_error(y_test, predictions)))
+      np.sqrt(metrics.mean_squared_error(y_test, predictions)))
 
+""" 
 # Prepare data for Model 2 and Model 3
 X = df[feature_columns]
 y = df[target_variable]
@@ -186,3 +197,4 @@ nn_model3.add(Dense(num_neurons, input_dim=len(feature_columns), activation=acti
 for i in range(num_layers - 1):
     nn_model3.add(Dense(num_neurons, activation=activation_func, kernel_initializer=kernel_initializer))
 nn_model3.add(Dense(1, activation='linear'))
+"""
