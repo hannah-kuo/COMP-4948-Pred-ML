@@ -30,6 +30,13 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.models import load_model
 import matplotlib.pyplot as plt
+from keras.optimizers import Adam, RMSprop
+from skopt import BayesSearchCV
+from skopt.space import Real, Categorical, Integer
+from keras.optimizers import Adam
+from scikeras.wrappers import KerasRegressor
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
 
 import warnings
 
@@ -93,6 +100,7 @@ print(model.summary())
 print('Root Mean Squared Error:',
       np.sqrt(metrics.mean_squared_error(y_test, predictions)))
 
+
 # --------------------------------------------------------------
 # Model 2: Neural Network model
 # --------------------------------------------------------------
@@ -122,78 +130,97 @@ print('Root Mean Squared Error:',
 #     print("\n")
 
 # --------------------------------------------------------------
+# Grid Search for Optimal Neural Network Hyper-parameters
+# --------------------------------------------------------------
+
+# Create NN Model
+# def create_nn_model(optimizer='adam', neurons=10, lr=0.001, activation='relu', initializer='he_normal'):
+#     model = Sequential()
+#     model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=8))
+#     model.add(Dense(neurons, activation=activation, kernel_initializer=initializer))
+#     model.add(Dense(1, activation='linear'))
+#
+#     if optimizer == 'adam':
+#         opt = Adam(learning_rate=lr)
+#     elif optimizer == 'rmsprop':
+#         opt = RMSprop(learning_rate=lr)
+#
+#     model.compile(optimizer=opt, loss='mean_squared_error')
+#     return model
+#
+#
+# # Define the grid search parameters
+# param_grid = {
+#     'optimizer': ['adam', 'rmsprop'],
+#     'neurons': [10, 20, 30],
+#     'lr': [0.001, 0.01, 0.1],
+#     'activation': ['relu', 'tanh'],
+#     'initializer': ['he_normal', 'he_uniform']
+# }
+#
+# # Perform Grid Search
+# # Create a KerasRegressor model
+# nn_model = KerasRegressor(build_fn=create_nn_model, epochs=50, batch_size=16, verbose=0, optimizer='adam', neurons=10,
+#                           lr=0.001, activation='relu', initializer='he_normal')
+#
+# # Define the search space
+# search_space = {
+#     'optimizer': Categorical(['adam', 'rmsprop']),
+#     'neurons': Integer(10, 100),
+#     'activation': Categorical(['relu', 'tanh']),
+#     'lr': Real(1e-4, 1e-2, prior='log-uniform'),
+# }
+#
+# # Perform the Grid search
+# grid_search = GridSearchCV(estimator=nn_model, param_grid=param_grid, n_jobs=-1, cv=3, scoring='neg_mean_squared_error')
+# grid_search_result = grid_search.fit(X_train_scaled, y_train)
+#
+# # Summarize the results
+# print(f"Best: {grid_search_result.best_score_} using {grid_search_result.best_params_}")
+# means = grid_search_result.cv_results_['mean_test_score']
+# stds = grid_search_result.cv_results_['std_test_score']
+# params = grid_search_result.cv_results_['params']
+# for mean, stdev, param in zip(means, stds, params):
+#     print(f"{mean:.4f} ({stdev:.4f}) with: {param}")
+
+# --------------------------------------------------------------
 # Model 3: Neural Network model with Tuned Hyper-parameters
 # --------------------------------------------------------------
 
-from scikeras.wrappers import KerasRegressor
-from sklearn.model_selection import RandomizedSearchCV
-import numpy as np
-from keras.optimizers import Adam
 
-"""
-Create NN Model
-"""
-from keras.optimizers import Adam, RMSprop
-
-
-def create_nn_model(optimizer='adam', neurons=10, lr=0.001, activation='relu', initializer='he_normal'):
+# Define the model
+def create_model(layers, activation, kernel_initializer, learning_rate):
     model = Sequential()
-    model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=8))
-    model.add(Dense(neurons, activation=activation, kernel_initializer=initializer))
-    model.add(Dense(1, activation='linear'))
+    for i, layer_size in enumerate(layers):
+        if i == 0:
+            model.add(Dense(layer_size, input_shape=(X_train_scaled.shape[1],), kernel_initializer=kernel_initializer,
+                            activation=activation))
+        else:
+            model.add(Dense(layer_size, kernel_initializer=kernel_initializer, activation=activation))
+    model.add(Dense(1, kernel_initializer=kernel_initializer, activation='linear'))
 
-    if optimizer == 'adam':
-        opt = Adam(learning_rate=lr)
-    elif optimizer == 'rmsprop':
-        opt = RMSprop(learning_rate=lr)
-
-    model.compile(optimizer=opt, loss='mean_squared_error')
+    optimizer = Adam(learning_rate=learning_rate)
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
 
-# Define the grid search parameters
-param_grid = {
-    'optimizer': ['adam', 'rmsprop'],
-    'neurons': [10, 20, 30],
-    'lr': [0.001, 0.01, 0.1],
-    'activation': ['relu', 'tanh'],
-    'initializer': ['he_normal', 'he_uniform']
-}
+# Best hyperparameters from the grid search
+layers = (30,)
+activation = 'relu'
+kernel_initializer = 'he_uniform'
+learning_rate = 0.001
+batch_size = 32  # You can adjust this value if you want
+epochs = 100  # You can adjust this value if you want
 
-"""
-Perform Grid Search
-"""
-from skopt import BayesSearchCV
-from skopt.space import Real, Categorical, Integer
-from keras.optimizers import Adam
-from scikeras.wrappers import KerasRegressor
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.model_selection import GridSearchCV
+# Create the third model
+third_model = create_model(layers, activation, kernel_initializer, learning_rate)
 
-# Create a KerasRegressor model
-nn_model = KerasRegressor(build_fn=create_nn_model, epochs=50, batch_size=16, verbose=0, optimizer='adam', neurons=10,
-                          lr=0.001, activation='relu', initializer='he_normal')
+# Train the model
+third_model.fit(X_train_scaled, y_train, batch_size=batch_size, epochs=epochs)
 
-# Define the search space
-search_space = {
-    'optimizer': Categorical(['adam', 'rmsprop']),
-    'neurons': Integer(10, 100),
-    'activation': Categorical(['relu', 'tanh']),
-    'lr': Real(1e-4, 1e-2, prior='log-uniform'),
-}
+y_pred = third_model.predict(X_test_scaled)
 
-# Perform the Grid search
-grid_search = GridSearchCV(estimator=nn_model, param_grid=param_grid, n_jobs=-1, cv=3, scoring='neg_mean_squared_error')
-grid_search_result = grid_search.fit(X_train_scaled, y_train)
-
-# Summarize the results
-print(f"Best: {grid_search_result.best_score_} using {grid_search_result.best_params_}")
-means = grid_search_result.cv_results_['mean_test_score']
-stds = grid_search_result.cv_results_['std_test_score']
-params = grid_search_result.cv_results_['params']
-for mean, stdev, param in zip(means, stds, params):
-    print(f"{mean:.4f} ({stdev:.4f}) with: {param}")
-
+loss = third_model.evaluate(X_test_scaled, y_test)
 
 
 """ 
