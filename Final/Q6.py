@@ -24,7 +24,7 @@ model.add(Dense(100, activation='relu', input_dim=4))
 model.add(Dense(100, activation='relu'))
 model.add(Dense(1))
 
-model.compile(optimizer='adam', loss='mean_squared_error')
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_absolute_error'])
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
@@ -32,12 +32,27 @@ history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_spli
 
 train_loss = history.history['loss']
 val_loss = history.history['val_loss']
+train_mae = history.history['mean_absolute_error']
+val_mae = history.history['val_mean_absolute_error']
 
+plt.figure(figsize=(12, 4))
+
+# Loss plot
+plt.subplot(1, 2, 1)
 plt.plot(train_loss, label='Training Loss')
 plt.plot(val_loss, label='Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
+
+# MAE plot
+plt.subplot(1, 2, 2)
+plt.plot(train_mae, label='Training MAE')
+plt.plot(val_mae, label='Validation MAE')
+plt.xlabel('Epochs')
+plt.ylabel('Mean Absolute Error')
+plt.legend()
+
 plt.show()
 
 y_pred = model.predict(X_test)
