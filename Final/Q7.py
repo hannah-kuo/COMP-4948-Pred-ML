@@ -67,10 +67,22 @@ plt.ylabel('Loss')
 plt.show()
 
 # Evaluate the model
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+# Evaluate the model
 with torch.no_grad():
     y_pred = model(X_test_tensor)
     y_pred = torch.sigmoid(y_pred)
     y_pred_classes = (y_pred > 0.5).numpy()
     accuracy = np.mean(np.all(y_pred_classes == y_test, axis=1))
     print(f'Accuracy: {accuracy * 100:.2f}%')
+
+    precision = precision_score(y_test, y_pred_classes, average='macro')
+    recall = recall_score(y_test, y_pred_classes, average='macro')
+    f1 = f1_score(y_test, y_pred_classes, average='macro')
+
+    print(f'Precision: {precision * 100:.2f}%')
+    print(f'Recall: {recall * 100:.2f}%')
+    print(f'F1-score: {f1 * 100:.2f}%')
+
 
