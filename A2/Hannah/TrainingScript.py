@@ -110,7 +110,7 @@ print('Root Mean Squared Error:',
 
 # Neural Network model with 2 hidden layers
 nn_model = Sequential()
-nn_model.add(Dense(10, activation='relu', input_dim=len(X_train_scaled.columns)))  # input layer
+nn_model.add(Dense(10, activation='relu', input_dim=7))  # input layer
 nn_model.add(Dense(10, activation='relu'))  # first hidden layer
 nn_model.add(Dense(10, activation='relu'))  # second hidden layer
 nn_model.add(Dense(1, activation='linear'))  # output layer
@@ -140,7 +140,11 @@ for model_name, metrics in results.items():
 # Create NN Model
 # def create_nn_model(optimizer='adam', neurons=10, lr=0.001, activation='relu', initializer='he_normal'):
 #     model = Sequential()
-#     model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=8))
+
+    # model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=7))
+
+# # model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=8))
+
 #     model.add(Dense(neurons, activation=activation, kernel_initializer=initializer))
 #     model.add(Dense(1, activation='linear'))
 #
@@ -245,7 +249,7 @@ mc = ModelCheckpoint('BinaryFolder/best_model3.h5', monitor='val_loss', mode='mi
                      save_best_only=True)
 third_model_history = third_model.fit(X_train_scaled, y_train, batch_size=batch_size, epochs=epochs,
                                       validation_split=0.2, callbacks=[es, mc])
-third_model.save('BinaryFolder/sequential_NN_model3.pkl')
+third_model.save('BinaryFolder/hannah_third_model.pkl')
 from keras.models import load_model
 
 best_third_model = load_model('BinaryFolder/best_model3.h5')
@@ -357,7 +361,7 @@ unfitModels = getUnfitModels()
 dfPredictions, models = fitBaseModels(X_train, y_train, X_val, unfitModels)
 stackedModel = fitStackedModel(dfPredictions, y_val)
 print("Object type before pickling:", type(stackedModel))
-joblib.dump(stackedModel, "BinaryFolder/stacked_model.pkl")
+joblib.dump(stackedModel, "BinaryFolder/hannah_stacked_model.pkl")
 
 # Evaluate base models with validation data.
 print("\n** Evaluate Base Models **")
@@ -392,7 +396,7 @@ for i, model in enumerate(unfitModels):
     if i == 6:
         break
     else:
-        joblib.dump(model, f"BinaryFolder/base_model_{i}.pkl")
+        joblib.dump(model, f"BinaryFolder/hannah_base_model_{i}.pkl")
 
 # Save MinMaxScaler
-joblib.dump(scaler, "BinaryFolder/scaler.pkl")
+joblib.dump(scaler, "BinaryFolder/hannah_scaler.pkl")
