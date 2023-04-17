@@ -10,7 +10,7 @@ from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.svm import SVR, SVC
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
@@ -110,7 +110,7 @@ print('Root Mean Squared Error:',
 
 # Neural Network model with 2 hidden layers
 nn_model = Sequential()
-nn_model.add(Dense(10, activation='relu', input_dim=7))  # input layer
+nn_model.add(Dense(10, activation='relu', input_dim=8))  # input layer
 nn_model.add(Dense(10, activation='relu'))  # first hidden layer
 nn_model.add(Dense(10, activation='relu'))  # second hidden layer
 nn_model.add(Dense(1, activation='linear'))  # output layer
@@ -141,7 +141,7 @@ for model_name, metrics in results.items():
 # def create_nn_model(optimizer='adam', neurons=10, lr=0.001, activation='relu', initializer='he_normal'):
 #     model = Sequential()
 
-    # model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=7))
+# model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=7))
 
 # # model.add(Dense(neurons, activation=activation, kernel_initializer=initializer, input_dim=8))
 
@@ -302,22 +302,29 @@ def evaluateModel(y_test, predictions, model):
     print(" RMSE:" + str(rmse) + " R2:  " + str(rsquared) + " " + model.__class__.__name__)
 
 
-def fitBaseModels(X_train, y_train, X_val, models):
+def fitBaseModels(X_train, y_train, X_val, unfitModels):
+    fittedModels = []
     dfPredictions = pd.DataFrame()
 
-    # Fit base model and store its predictions in dataframe.
-    for i in range(0, len(models)):
-        if isinstance(models[i], Sequential):
-            models[i].fit(X_train_scaled, y_train)
-            predictions = models[i].predict(X_val_scaled)
-        else:
-            models[i].fit(X_train, y_train)
-            predictions = models[i].predict(X_val)
+    for i, model in enumerate(unfitModels):
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
 
-        colName = str(i)
-        # Add base model predictions to column of data frame.
-        dfPredictions[colName] = predictions[:, 0] if isinstance(models[i], Sequential) else predictions
-    return dfPredictions, models
+        if isinstance(model, Sequential):
+            model = Sequential()
+            model.add(Dense(units=64, activation='relu', input_dim=X_train_scaled.shape[1]))
+            model.add(Dense(units=32, activation='relu'))
+            model.add(Dense(units=1, activation='linear'))
+            model.compile(loss='mean_squared_error', optimizer='adam')
+
+        model.fit(X_train_scaled, y_train)
+        fittedModels.append(model)
+
+        X_val_scaled = scaler.transform(X_val)
+        y_val_pred = model.predict(X_val_scaled)
+        dfPredictions[model.__class__.__name__] = y_val_pred.ravel()
+
+    return dfPredictions, fittedModels
 
 
 def fitStackedModel(X, y):
