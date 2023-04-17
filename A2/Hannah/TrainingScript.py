@@ -379,6 +379,8 @@ for i in range(0, len(models)):
     dfValidationPredictions[colName] = predictions
     evaluateModel(y_test, predictions, models[i])
 
+print("Shape of dfValidationPredictions:", dfValidationPredictions.shape)
+
 # Evaluate stacked model with validation data.
 stackedPredictions = stackedModel.predict(dfValidationPredictions)
 print("\n** Evaluate Stacked Model **")
